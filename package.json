@@ -1,0 +1,15 @@
+{
+  "name": "runrepo",
+  "version": "1.0.0",
+  "description": "watch a git repo and run a command when changes are detected",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^3.2.3"
+  }
+}
