@@ -26,15 +26,15 @@ var myPackage = {
     newVersion: null,
     location: null,
 }
-var launching = false
+var launchFlag = false
 
 watchMain(5000)
 const isDev = true
 
 async function main() {
     getInfo(packageName)
-    .then(shouldUpdate => runUpdate(shouldUpdate))
-    .then(shouldRestart => restartIfNeeded(shouldRestart))
+    .then(async shouldUpdate => await runUpdate(shouldUpdate))
+    .then(async shouldRestart => await restartIfNeeded(shouldRestart))
     .catch(err => console.log(err))
 }
 function watchMain(timeout = 10000) {
