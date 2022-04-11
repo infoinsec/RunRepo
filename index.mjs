@@ -70,7 +70,7 @@ function getInfo(packageName = packageName) {
         console.log(`package name: ${myPackage.name}`)
         console.log(`old version: ${myPackage.oldVersion}`)
         console.log(`new version: ${myPackage.newVersion}`)
-        myPackage.oldVersion !== null && myPackage.newVersion > myPackage.oldVersion ? resolve(true) : resolve(false)
+        myPackage.oldVersion === null || myPackage.newVersion > myPackage.oldVersion ? resolve(true) : resolve(false)
     });
 }
 
