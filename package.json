@@ -2,9 +2,9 @@
   "name": "runrepo",
   "version": "1.0.0",
   "description": "watch a git repo and run a command when changes are detected",
-  "bin": "node index.mjs",
+  "bin": "./index.mjs",
   "scripts": {
-    "start": "./index.mjs",
+    "start": "node ./index.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
