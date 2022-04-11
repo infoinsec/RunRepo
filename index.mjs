@@ -79,7 +79,7 @@ function getInfo(packageName = packageName) {
         
         console.log(`old version: ${myPackage.oldVersion}`)
         console.log(`new version: ${myPackage.newVersion}`)
-        myPackage.newVersion > myPackage.oldVersion ? resolve(true) : resolve(false)
+        myPackage.oldVersion === null || myPackage.newVersion > myPackage.oldVersion ? resolve(true) : resolve(false)
     });
 }
 
@@ -143,30 +143,18 @@ async function restartIfNeeded(shouldRestart) {
         } else {
             //restart the app
             launching = true
-            execSync(`cd ${myPackage.location} && npm i`)
-            // console.log(`npm install results:\r ${npmInstall}`)
-            console.log("Running npm start...")
-            exec(`cd ${myPackage.location} && npm start`)
-            let recheck = (res) => {
-                return new Promise((resolve, reject) => {
-                    if (res) {
-                        resolve = res
-                    }
-                    try{
-                        execSync(`Get-Process electron`, {
-                            'shell': 'powershell.exe',
-                            "encoding": "utf8"
-                        })
-                        console.log('Process is running')
-                        launching = false
-                        resolve()
-                    } catch (err) {
-                        console.log('Process is not running, rechecking...')
-                        setTimeout(() => {
-                            recheck(resolve)
-                        }, 1000)
-                    }
-                })
+        }
+        console.log(`already launching: ${launching}`)
+        console.log(`shouldRestart: ${shouldRestart}`)
+        let npmInstall = execSync(`cd "${path.resolve('./', packageName)}" && npm i`, {
+            encoding: 'utf8'
+        })
+        console.log(`npm install results:\r ${npmInstall}`)
+        console.log("Running npm start...")
+        exec(`cd ${myPackage.location} && npm start`, (err, stdout, stderr) => {
+            if (err) {
+                console.log(err)
+                return
             }
             while (launching && !launched) {
                 console.log('process launching...')
