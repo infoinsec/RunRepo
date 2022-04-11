@@ -5,6 +5,7 @@ import {
     execSync
 } from 'child_process';
 import fetch from 'node-fetch';
+import * as cheerio from 'cheerio';
 
 //get existing version of the app
 function getExistingVersion(packageName) {
@@ -19,29 +20,34 @@ function getExistingVersion(packageName) {
 }
 
 const packageName = 'H2testjs'
-
 let oldVersion = await getExistingVersion(packageName)
 var myPackage = {
+    name: packageName,
     oldVersion: oldVersion,
     newVersion: null,
     location: null,
 }
 var launching = false
+var launched = false
+console.log(`package name: ${myPackage.name}`)
+
 
 watchMain(5000)
 const isDev = true
 
 async function main() {
     getInfo(packageName)
-    .then(shouldUpdate => runUpdate(shouldUpdate))
-    .then(shouldRestart => restartIfNeeded(shouldRestart))
-    .catch(err => console.log(err))
+        .then(async shouldUpdate => await runUpdate(shouldUpdate))
+        .then(async shouldRestart => await restartIfNeeded(shouldRestart))
+        .catch(err => console.log(err))
 }
+
 function watchMain(timeout = 10000) {
     return new Promise(async (resolve, reject) => {
         await main()
         setTimeout(() => {
-            watchMain()
+            console.log('watchMain timeout')
+            watchMain(timeout)
             resolve()
         }, timeout)
     })
@@ -53,8 +59,8 @@ function getInfo(packageName = packageName) {
     //accepts a package name and returns the latest version
     myPackage.oldVersion = getExistingVersion(packageName)
 
-    const homepage = 'https://raw.githubusercontent.com/infoinsec/'
-    const url = homepage + packageName + '/main/package.json'
+    const homepage = 'https://github.com/infoinsec/'
+    const url = homepage + packageName + '/blob/main/package.json'
 
     return new Promise(async (resolve, reject) => {
         const __dirname = path.resolve(path.dirname(''));
@@ -64,10 +70,13 @@ function getInfo(packageName = packageName) {
         if (!response.status === 200) {
             reject(response.status)
         }
-        let json = await response.json()
-        myPackage.name = json.name
-        myPackage.newVersion = json.version
-        console.log(`package name: ${myPackage.name}`)
+        let $ = cheerio.load(await response.text())
+        let version = $('#LC7 span.pl-s').text()
+        //match the version number between the double quotes
+        let regex = /"([^"]+)"/
+        let match = regex.exec(version)
+        myPackage.newVersion = match[1]
+        
         console.log(`old version: ${myPackage.oldVersion}`)
         console.log(`new version: ${myPackage.newVersion}`)
         myPackage.newVersion > myPackage.oldVersion ? resolve(true) : resolve(false)
@@ -76,18 +85,25 @@ function getInfo(packageName = packageName) {
 
 //returns true if the app should be restarted
 async function runUpdate(shouldUpdate) {
-    //Check if process is already running
-    let running = false
-    try {
-        //run powershell command to check if process is running
-        if(!isDev) execSync(`Get-Process ${myPackage.name}`, {'shell':'powershell.exe'})
-        if(isDev) execSync("Get-Process electron", {'shell':'powershell.exe'})
-        running = true
-    } catch (err) {
-        running = false
-    }
     if (shouldUpdate) {
         console.log('update required')
+        let running = false
+        try {
+            //run powershell command to check if process is running
+            if (!isDev) {
+                execSync(`Get-Process ${myPackage.name}`, {
+                    'shell': 'powershell.exe',
+                    "encoding": "utf8"})
+            }
+            if (isDev) {
+                execSync("Get-Process electron", {
+                    'shell': 'powershell.exe',
+                    "encoding": "utf8"})
+            }
+            running = true
+        } catch (err) {
+            running = false
+        }
         if (!fs.existsSync(myPackage.location)) {
             await cloneRepo(packageName, `.\\${packageName}`)
         } else {
@@ -96,54 +112,69 @@ async function runUpdate(shouldUpdate) {
                 console.log('Process is already running and needs to update')
                 console.log('renaming current directory to old')
                 //kill the process
-                if(!isDev) execSync(`taskkill /f /im ${packageName}.exe`)
-                if(isDev) execSync(`taskkill /f /im electron.exe`)
+                if (!isDev) execSync(`taskkill /f /im ${packageName}.exe`)
+                if (isDev) execSync(`taskkill /f /im electron.exe`)
                 launching = false
                 //rename the old directory
                 fs.renameSync(myPackage.location, `${myPackage.location}_old`)
                 //clone the new repo
                 await cloneRepo(packageName, myPackage.location)
             } else {
-                console.log('process is not running')
                 //process is not running, update
-                console.log('repo already exists. Needs an update. Updating...')
+                console.log('repo already exists but needs an update. Updating...')
                 execSync(`git pull`, {
                     cwd: myPackage.location
                 })
-                execSync(`cd ${myPackage.location} && git pull`)
+                exec(`cd ${myPackage.location} && git pull`)
             }
-            return true
         }
+        return true
     } else {
         console.log('no update required')
-        if (!running) return true
-        if (running) return false
+        if (!launched && !launching) return true
     }
 }
 
 async function restartIfNeeded(shouldRestart) {
     if (shouldRestart) {
-        if (launching) {
-            console.log('waiting for process to launch')
-            return
-        }
-        if (!launching) {
-            launching = true
-        }
-        console.log(`already launching: ${launching}`)
         console.log(`shouldRestart: ${shouldRestart}`)
-        let npmInstall = execSync(`cd ${myPackage.location} && npm i`, {
-            encoding: 'utf8'
-        })
-        console.log(`npm install results:\r ${npmInstall}`)
-        console.log("Running npm start...")
-        exec(`cd ${myPackage.location} && npm start`, (err, stdout, stderr) => {
-            if (err) {
-                console.log(err)
-                return
+        if (launching) {
+            console.log('Waiting for process to launch')
+        } else {
+            //restart the app
+            launching = true
+            execSync(`cd ${myPackage.location} && npm i`)
+            // console.log(`npm install results:\r ${npmInstall}`)
+            console.log("Running npm start...")
+            exec(`cd ${myPackage.location} && npm start`)
+            let recheck = (res) => {
+                return new Promise((resolve, reject) => {
+                    if (res) {
+                        resolve = res
+                    }
+                    try{
+                        execSync(`Get-Process electron`, {
+                            'shell': 'powershell.exe',
+                            "encoding": "utf8"
+                        })
+                        console.log('Process is running')
+                        launching = false
+                        resolve()
+                    } catch (err) {
+                        console.log('Process is not running, rechecking...')
+                        setTimeout(() => {
+                            recheck(resolve)
+                        }, 1000)
+                    }
+                })
             }
-            console.log(stdout)
-        })
+            while (launching && !launched) {
+                console.log('process launching...')
+                await recheck()
+                launched = true
+                launching = false
+            }
+        }
     }
 }
 
