@@ -132,7 +132,7 @@ async function restartIfNeeded(shouldRestart) {
         }
         console.log(`already launching: ${launching}`)
         console.log(`shouldRestart: ${shouldRestart}`)
-        let npmInstall = execSync(`cd ${myPackage.location} && npm i`, {
+        let npmInstall = execSync(`cd "${myPackage.location}" && npm i`, {
             encoding: 'utf8'
         })
         console.log(`npm install results:\r ${npmInstall}`)
