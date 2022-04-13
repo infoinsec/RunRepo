@@ -6,7 +6,7 @@ import {
     execSync
 } from 'child_process'
 import fetch from 'node-fetch'
-import * as cheerio from 'cheerio'
+import getPackageJsonPropFromGithubRepo from './getPackageJsonPropFromGithubRepo.mjs'
 import chalk from 'chalk'
 
 //get existing version of the app
@@ -91,14 +91,7 @@ function getInfo(packageName = packageName) {
         if (!response.status === 200) {
             reject(response.status)
         }
-        let $ = cheerio.load(await response.text())
-        let version = $('#LC8 span.pl-s').text()
-        //match the version number between the double quotes
-        let regex = /"version": "([0-9]+\.[0-9]?\.[0-9]?)"/
-        //match the version number
-        let match = regex.exec(version)
-        myPackage.newVersion = match[1]
-
+        myPackage.newVersion = await getPackageJsonPropFromGithubRepo(packageName, 'version')
         console.log(`old version: ${myPackage.oldVersion}`)
         console.log(`new version: ${myPackage.newVersion}`)
         myPackage.oldVersion === null || myPackage.newVersion > myPackage.oldVersion ? resolve(true) : resolve(false)
