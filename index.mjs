@@ -104,7 +104,7 @@ async function runUpdate(shouldUpdate) {
         if (shouldUpdate) {
             console.log('update required')
 
-            let dir = `./${packageName}#${myPackage.newVersion}`
+            let dir = `../${packageName}#${myPackage.newVersion}`
             if (!fs.existsSync(dir)) {
                 console.log('Repo does not exist yet, cloning')
                 await cloneRepo(packageName, dir)
