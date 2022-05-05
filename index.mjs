@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import process from 'process'
 import upath from 'upath'
 import {
     exec,
@@ -10,8 +11,10 @@ import semver from 'semver'
 import getPackageJsonPropFromGithubRepo from './getPackageJsonPropFromGithubRepo.mjs'
 import chalk from 'chalk'
 
+//store command line arguments
+var packageName = process.argv[2]
+// var runArgs = process.argv[3]
 
-var packageName = 'H2testjs'
 const startingDir = upath.toUnix(process.cwd())
 var oldVersion = await getExistingVersion(packageName)
 var myPackage = {
