@@ -17,6 +17,7 @@ var packageName = process.argv[2]
 
 const startingDir = upath.toUnix(process.cwd())
 var oldVersion = await getExistingVersion(packageName)
+oldVersion ? null : oldVersion = '0.0.0'
 var myPackage = {
     name: packageName,
     oldVersion: oldVersion,
@@ -75,6 +76,7 @@ function getInfo(packageName = packageName) {
             reject(response.status)
         }
         myPackage.newVersion = await getPackageJsonPropFromGithubRepo(packageName, 'version')
+        myPackage.newVersion ? null : myPackage.newVersion = '0.0.0'
         console.log(`old version: ${myPackage.oldVersion}`)
         console.log(`new version: ${myPackage.newVersion}`)
         myPackage.oldVersion === null || myPackage.oldVersion === undefined ||
