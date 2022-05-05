@@ -140,7 +140,7 @@ async function runUpdate(shouldUpdate) {
                 }
             }
             console.log(`Running npm install`)
-            execSync(`npm --prefix "./${packageName}#${myPackage.newVersion}" i`)
+            execSync(`npm --prefix "../${packageName}#${myPackage.newVersion}" i`)
             // console.log(`npm install results:\r ${npmInstall}`)
             resolve(true)
         } else {
