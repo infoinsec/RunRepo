@@ -13,22 +13,6 @@ const __filename = url.fileURLToPath(
     import.meta.url);
 const __dirname = url.fileURLToPath(new URL('.',
     import.meta.url));
-import fetch from 'node-fetch'
-import semver from 'semver'
-import getPackageJsonPropFromGithubRepo from './getPackageJsonPropFromGithubRepo.mjs'
-import chalk from 'chalk'
-import {
-    doesNotThrow
-} from 'assert'
-import {
-    DefaultHandler
-} from 'htmlparser2'
-import {
-    asyncTimeout,
-    // runInterval,
-    recurringRace,
-    recurringAllSettled
-} from 'file://C:/Code/utils/index.mjs'
 import {
     hyperClient,
     hyperServer
